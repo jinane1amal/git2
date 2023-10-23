@@ -1,0 +1,153 @@
+---
+title: "Dplyr assignment"
+author: "Jinane Amal"
+format: html
+---
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(here)
+```
+
+
+```{r}
+here::i_am("git2.Rproj")
+spotify<- readRDS(here("tspotify copie.Rds"))
+dropout <- readRDS(here("dropoutcop copie.Rds"))
+```
+
+##Exercice 1
+
+###Question 1:
+
+```{r}
+nbof_artistsspotify <- nrow(spotify %>% distinct(artist))
+nbof_songsspotify <- nrow(spotify %>% distinct(song))
+nbof_genresspotify <- nrow(spotify %>% distinct(genre))
+```
+
+The data set contains `r nbof_artistsspotify` artists ,`r nbof_songsspotify` songs `r nbof_genresspotify` genres.
+
+### Question 2:
+
+```{r}
+  spotify|>
+  group_by(year)|>
+  distinct(song)|>
+  summarise(n())|>
+  knitr::kable()
+```
+
+### Question 3:
+
+```{r}
+mostpop <-
+  spotify |>
+  group_by(artist)|>
+  summarise(Num_Songs = n_distinct(song)) |>
+  arrange(desc(Num_Songs))|>
+ slice(1)|>
+  pull(artist)
+
+```
+
+```{r}
+mostpopsong <-
+  spotify |>
+  group_by(artist)|>
+  summarise(Num_Songs = n_distinct(song)) |>
+  arrange(desc(Num_Songs))|>
+ slice(1)|>
+  pull(Num_Songs)
+```
+
+The most popular artist in the data set is `r mostpop` with `r mostpopsong` songs
+
+### Question 4:
+```{r}
+spotify |>
+distinct(song, .keep_all= TRUE)|>
+group_by(genre)|>
+  summarise(
+    mintempo=(min(tempo)),
+    maxtempo=(max(tempo)),
+    meantempo=(mean(tempo)),
+    mediantempo=(median(tempo)))|>
+    knitr::kable()
+
+```
+
+### Question 5:
+
+```{r}
+spotify |>
+distinct(song, .keep_all= TRUE)|>
+group_by(year)|>
+  summarise(
+    median_nrgy=(median(energy)),
+    median_dnce=(median(danceability)))|>
+    knitr::kable()
+```
+
+### Question 6:
+
+```{r}
+spotify |>
+group_by(year)|>
+  summarise(median_nrgy=(median(energy)),
+    median_dnce=(median(danceability)))|>
+  ggplot(aes(x=year, y=median_nrgy, color=median_dnce))+ geom_line()
+```
+
+## Exercise 2 
+
+### Question 1: 
+```{r}
+dropout|>
+  group_by(Gender, `Marital status`) |>
+  summarise(
+    medianageconditionned= median(`Age at enrollment`)
+  )
+```
+### Question 2:
+```{r}
+dropout|>
+ group_by(Gender, `Marital status`)|>
+ summarise(medianageconditionned= median(`Age at enrollment`))|>
+  select(Gender, `Marital status`, medianageconditionned)|>
+  pivot_wider(values_from = medianageconditionned, names_from=Gender)|>
+    knitr::kable()
+```
+
+### Question 3:
+
+```{r}
+dropout|>
+  group_by(Target)|>
+  summarise_at(vars(starts_with("Curricular units")), mean)
+
+```
+
+### Question 4:
+```{r}
+long <- dropout|>
+  select(starts_with("Curricular units 1st sem"), Gender) |>
+  pivot_longer(
+    cols = starts_with("Curricular units 1st sem"),
+    names_to = "Units",
+    values_to = "Value")
+
+wide <- long |>
+  group_by(Units, Gender)|>
+  summarise(Median_val= median(Value,na.rm=TRUE), .groups='drop')|>
+  pivot_wider(
+    names_from = Gender,
+    values_from = Median_val
+  )
+  
+knitr::kable(wide, caption = "The Median val of curricular Units By Gender" )
+```
+
